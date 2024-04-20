@@ -1,0 +1,26 @@
+name: Fetch latest list
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron:  '00 10 * * SUN'
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out this repo
+      uses: actions/checkout@v3
+    - name: Fetch latest list
+      run: |-
+        curl http://web.archive.org/cdx/search/cdx\?url\=/www.jonasburgert.de/wp-content/uploads/\*\&output\=json | jq '.[] | select(.[3] == "image/jpeg") | .[2]' | grep '/wp-content/uploads/20' | tr -d '"' > burgert.txt
+
+    - name: Commit and push if it changed
+      run: |-
+        git config user.name "Automated"
+        git config user.email "actions@users.noreply.github.com"
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Latest list: ${timestamp}" || exit 0
+        git push
